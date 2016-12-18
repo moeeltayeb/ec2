@@ -1,4 +1,6 @@
-- hosts: all
+- hosts: instances
   roles:
-    - ec2
-#  become: yes
+    - bootstrap
+    - docker
+  gather_facts: no
+  become: yes

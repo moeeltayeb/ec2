@@ -1,18 +1,97 @@
 ---
 # tasks file for ec2
+- name: Create VPC
+  ec2_vpc:
+    state: present
+    cidr_block: "{{ vpc_cidr }}"
+    resource_tags: { "Environment":"Development" }
+    subnets:
+      - cidr: "{{ subnet_cidr01 }}"
+        az: "{{ az }}"
+        resource_tags: { "Environment":"Dev", "Tier" : "App" }
+    internet_gateway: True
+    route_tables:
+      - subnets:
+          - "{{ subnet_cidr01 }}"
+        routes:
+          - dest: 0.0.0.0/0
+            gw: igw
+    region: "{{ region }}"
+  register: vpc
+  when: inventory_hostname in groups['localhost']
+
+- name: Generate key if doesn't exist
+  ec2_key:
+    name: ansible
+    region: "{{ region }}"
+  register: key
+  when: inventory_hostname in groups['localhost']
+
+- name: Creating EC2 security group
+  ec2_group:
+    name: access
+    description: EC2 security group for ssh access
+    vpc_id: "{{ vpc.vpc.id }}"
+    region: "{{ region }}"
+    rules:
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: 80
+        to_port: 80
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: 8080
+        to_port: 8080
+        cidr_ip: 0.0.0.0/0
+  connection: local
+  register: sec_group
+  when: inventory_hostname in groups['localhost']
 
 - name: Create EC2 machine
   ec2:
     key_name: ansible
     region: "{{ region }}"
+    group: access
     instance_type: "{{ instance_type }}"
     image: "{{ ami_id }}"
     wait: yes
     wait_timeout: 500
     count: "{{ instance_count }}"
     volumes:
-    - device_name: /dev/xvda
+    - device_name: /dev/sda1
       volume_size: "{{ root_volume_size }}"
       delete_on_termination: "{{ delete_volume }}"
     instance_tags:
-        Name: 'aws-poc'
+      Name: 'aws-poc'
+    vpc_subnet_id: "{{ vpc.subnets[0].id }}"
+    assign_public_ip: yes
+  register: ins
+  when: inventory_hostname in groups['localhost']
+
+- name: Populate inventory
+  lineinfile:
+    dest: "{{ vars.inventory }}"
+    insertafter: '\[instances\]'
+    line: "{{ item.public_ip }}"
+    state: present
+  with_items:
+    - "{{ ins.instances }}"
+  when: inventory_hostname in groups['localhost']
+  register: var
+
+- debug: var=var
+
+- name: Wait for SSH on instances to come up
+  wait_for:
+    host: "{{ item.public_ip }}"
+    port: 22
+    delay: 60
+    timeout: 600
+    state: started
+  with_items:
+    - "{{ ins.instances }}"
+  when: ins is defined
+

@@ -4,6 +4,9 @@
 ami_id: 'ami-06963965'
 instance_type: 't2.micro'
 region: 'ap-southeast-1'
+az: 'ap-southeast-1a'
 instance_count: 0
 root_volume_size: 8
-delete_volume: false
+delete_volume: true
+#inventory_file: '../ansible-environments'
+
