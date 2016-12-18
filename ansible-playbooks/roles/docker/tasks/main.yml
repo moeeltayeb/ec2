@@ -1,0 +1,66 @@
+---
+
+- name: Add repo from Docker
+  shell: curl -sSL https://get.docker.com/ | sudo sh creates=/usr/bin/docker
+
+- name: Install docker
+  apt: name=docker-engine update-cache=yes
+
+- name: get setuptools
+  apt: name=python-setuptools state=present
+
+- name: make sure pip works
+  shell: easy_install -U pip creates=/usr/local/bin/pip
+
+- name: install docker-py
+  pip: name=docker-py state=present
+
+- name: install docker-compose
+  pip: name=docker-compose state=present
+
+- name: create the logrotate conf for docker
+  copy: src=logrotate_docker dest=/etc/logrotate.d/docker
+
+- name: Create working directory
+  file:
+    path: "{{ work_dir }}"
+    state: directory
+    mode: 777
+
+- name: Copy docker_compose_cleanup.sh
+  copy:
+    src: docker_compose_cleanup.sh
+    dest: "{{ work_dir }}/docker_compose_cleanup.sh"
+    mode: "u=rwx,g=rx,o=rx"
+
+- name: Remove any old container
+  raw: "{{ work_dir }}/docker_compose_cleanup.sh"
+  ignore_errors: True
+
+- name: Configure wordpress docker container config
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ work_dir }}/docker-compose.yml"
+    mode: "u=rwx,g=rw,o=rw"
+
+- name: Make sure document root directory exists
+  file:
+    path: "{{ work_dir }}/wp_html"
+    state: directory
+    mode: 0755
+
+- name: Copy docker_compose_up.sh
+  template:
+    src: docker_compose_up.sh.j2
+    dest: "{{ work_dir }}/docker_compose_up.sh"
+    mode: "u=rwx,g=rx,o=rx"
+
+- name: Deploy and run wordpress docker container
+  raw: "{{ work_dir }}/docker_compose_up.sh"
+  register: run
+  ignore_errors: True
+
+- name: Docker-compose script output
+  debug:
+    var: run
+  ignore_errors: True

@@ -1,0 +1,17 @@
+---
+wordpress_db:
+  image: "{{ db_image }}" #mariadb
+  environment:
+    MYSQL_ROOT_PASSWORD: "{{ db_password }}"
+
+wordpress:
+  image: "{{ docker_image }}" #wordpress
+  links:
+    - wordpress_db:mysql
+  ports:
+    - {{ host_port | int }}:{{ container_port | int }}
+  volumes:
+    - {{ document_root_dir }}:/var/www/html
+  environment:
+    MYSQL_USERNAME: "{{ db_username }}" #root
+    MYSQL_ROOT_PASSWORD: "{{ db_password }}" #passcode
