@@ -1,2 +1,29 @@
 [localhost]
-127.0.0.1 ansible_user="{{ username }}" ansible_ssh_pass="{{ password }}"
+localhost ansible_host=127.0.0.1 #ansible_user="username" ansible_ssh_pass="password"
+
+[instances] 
+
+[all:vars]
+host_key_checking=False
+ansible_user=ubuntu
+ansible_ssh_private_key_file=~/ansible.pem
+host_key_checking=False
+ami_id='ami-06963965'
+instance_type='t2.micro'
+region='ap-southeast-1'
+az='ap-southeast-1a'
+instance_count=0
+root_volume_size=8
+delete_volume=true
+inventory="gitrepo/aws-poc/ansible-environments/hosts"
+site_name=moeet
+work_dir=/var/temp/{{ site_name }}
+vpc_cidr=172.22.0.0/16
+subnet_cidr01=172.22.1.0/24
+db_image='mariadb'
+db_username='root'
+db_password='passcode'
+docker_image='wordpress'
+host_port=80
+container_port=80
+document_root_dir="{{ work_dir }}/wp_html"
