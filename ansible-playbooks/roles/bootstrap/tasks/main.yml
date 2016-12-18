@@ -1,0 +1,7 @@
+---
+# tasks file for bootstrap
+
+- name: Install minimal packages on new instances
+  raw: apt-get -y update && apt-get -y install python2.7 python-simplejson python-pip
+  when: inventory_hostname in groups['instances']
+
