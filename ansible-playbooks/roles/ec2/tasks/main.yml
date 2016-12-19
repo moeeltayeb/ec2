@@ -4,11 +4,11 @@
   ec2_vpc:
     state: present
     cidr_block: "{{ vpc_cidr }}"
-    resource_tags: { "Environment":"Development" }
+    resource_tags: { "Environment": "{{ env }}", "Name": "{{ site_name }}-{{ env }}" }
     subnets:
       - cidr: "{{ subnet_cidr01 }}"
         az: "{{ az }}"
-        resource_tags: { "Environment":"Dev", "Tier" : "App" }
+        resource_tags: { "Environment": "{{ env }}", "Tier" : "App" }
     internet_gateway: True
     route_tables:
       - subnets:
@@ -65,7 +65,7 @@
       volume_size: "{{ root_volume_size }}"
       delete_on_termination: "{{ delete_volume }}"
     instance_tags:
-      Name: 'aws-poc'
+      Name: 'aws-poc-{{ env }}'
     vpc_subnet_id: "{{ vpc.subnets[0].id }}"
     assign_public_ip: yes
   register: ins

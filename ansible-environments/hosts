@@ -1,10 +1,11 @@
 [localhost]
-localhost ansible_host=127.0.0.1 #ansible_user="username" ansible_ssh_pass="password"
+localhost ansible_host=127.0.0.1 ansible_user="user" ansible_ssh_pass="password"
 
 [instances] 
 
 [all:vars]
-host_key_checking=False
+env='dev'
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
 ansible_user=ubuntu
 ansible_ssh_private_key_file=~/ansible.pem
 host_key_checking=False
@@ -12,7 +13,7 @@ ami_id='ami-06963965'
 instance_type='t2.micro'
 region='ap-southeast-1'
 az='ap-southeast-1a'
-instance_count=0
+instance_count=1
 root_volume_size=8
 delete_volume=true
 inventory="gitrepo/aws-poc/ansible-environments/hosts"
