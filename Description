@@ -1,0 +1,127 @@
+###############
+Role Name
+=========
+ec2
+##############
+A brief description of the role goes here.
+
+Requirements
+------------
+- boto
+- python
+- aws credentials to be placed in ~/.aws/credentials. refer: http://boto.cloudhackers.com/en/latest/boto_config_tut.html
+
+Role Variables
+--------------
+- ami_id: "ec2 ami id"
+- instance_type: "type of instance to create fo e.g.: t2.micro"
+- region: "ec2 region where resources need to be created"
+- az: "ec2 availability zone"
+- instance_count: "number of ec2 instances"
+- root_volume_size: "Size of the root volume attached to ec2 instance"
+- delete_volume: "Switch to turn ON or OFF, whether the volume should be deleted after instance is terminated. Possible values: True, False"
+- vpc_cidr: "VPC CIDR range for e.g. 172.16.0.0/16 or 192.168.0.0/16"
+- subnet_cidr01: "Subnet CIDR range for e.g. 172.16.0.0/24 or 192.168.0.0/24"
+
+Dependencies
+------------
+No dependency on othe roles as such
+
+License
+-------
+BSD
+
+###############
+###############
+Role Name:
+------------
+bootstrap
+###############
+
+A brief description of the role goes here:
+------------
+This is the role to bootstrap the target (ec2) machines to make it manageable via core ansible modules. Target modules require certain python packages that this module installs using raw module of ansible. Raw module doesn't require python to connect to the target machine.
+
+Requirements:
+-------------
+SSH is the only requirement for this module to be executed successfully.
+
+Role Variables:
+--------------
+No variable set for this module.
+
+Dependencies
+------------
+Following role should be executed before this role:
+-ec2
+
+License
+-------
+BSD
+
+##############
+##############
+Role Name
+=========
+docker
+##############
+
+A brief description of the role goes here.
+
+Requirements
+------------
+Python on target machine
+ssh to the target machine
+
+Role Variables
+--------------
+work_dir: "work directory on the target machine where all the artifacts will be placed"
+
+This role configures and deployes default wordpress docker container on the target ec2 machine.
+
+Dependencies
+------------
+Following roles should be executed first:
+- ec2
+- bootstrap
+
+License
+-------
+BSD
+
+##############
+#############
+Host inventory file: ansible-environments/hosts
+
+This is the host inventory file that contains host groups:
+[localhost] >> This is just for local actions/local run/or instances created in AWS using boto on the local machine.
+
+[instances] >> EC2 instance IPs will be populated automatically after successful run of ec2 role. However, if any of the instances is terminated then the IP of that terminated instances should be removed manually.
+
+[all:vars] >> Below this, all the required variables are set as follows. Change the values of the variables accordingly.
+
+#############
+env='dev'
+ansible_ssh_common_args='-o StrictHostKeyChecking=no' #Ansible will not check the host key, if set to yes, then Ansible will prompt and ask for yes/no whether to connect to the target host over ssh or not. Generally this should be set to 'no' for automated tasks to run soothly.
+ansible_user=ubuntu #username of the target ec2 machine. For usuntu by-default it is 'ubuntu'
+ansible_ssh_private_key_file=~/ansible.pem #Private key (.pem) to connect to the instance. This is the key generated on AWS console or using AWS API and should exist in respective AWS account.
+ami_id='ami-06963965' #AWS AMI ID
+instance_type='t2.micro' #Type of AWS instance
+region='ap-southeast-1' #AWS region
+az='ap-southeast-1a' #Availability Zone
+instance_count=1 #Number of instances to launch
+root_volume_size=8 #this is the size of root volume in GB.
+delete_volume=true #Can be set to True or False, if set to true then the volume will be deleted if the instance will be terminated.
+inventory="gitrepo/aws-poc/ansible-environments/hosts" #Location of the host inventory file
+site_name=moeet #Can be set to any string, this is used to decide work directory for docker role.
+work_dir=/var/temp/{{ site_name }} #working directory to keep artifacts for docker role
+vpc_cidr=172.22.0.0/16 #VPC CIDR
+subnet_cidr01=172.22.1.0/24 #Subnet CIDR
+db_image='mariadb' #Docker image for DB used with wordpress
+db_username='root' #DB username
+db_password='passcode' #DB password
+docker_image='wordpress' #Docker image for wordpress
+host_port=80 #Host port that will forward the traffic to container_port.
+container_port=80 #Container port that will listen all queries from host
+document_root_dir="{{ work_dir }}/wp_html" #Document root directory on the host, files will be persisted on host even if the docker is destroyed or corrupted.
+##############
